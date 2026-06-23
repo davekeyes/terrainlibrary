@@ -412,7 +412,7 @@
   </div>
 </div>
 
-<script src="catalogue.js"></script>
+<script src="catalogue.js?v=2"></script>
 <script>
 // ── Photo helper ─────────────────────────────
 function photoPH(label) {
@@ -424,7 +424,10 @@ function photoPH(label) {
 }
 
 function getPhotos(item) {
-  return (item.photos || []).map(photoUrl).filter(Boolean);
+  return (item.photos || []).map(function(p) { return photoUrl(p); }).filter(Boolean);
+}
+function getFullPhotos(item) {
+  return (item.photos || []).map(function(p) { return photoUrl(p, "full"); }).filter(Boolean);
 }
 
 // ── Category class mapping ───────────────────
@@ -572,14 +575,15 @@ function openModal(id) {
   if (!item) return;
 
   var photos = getPhotos(item);
+  var fullPhotos = getFullPhotos(item);
 
   // Photos
   if (photos.length > 0) {
-    setMainPhoto(photos[0]);
+    setMainPhoto(fullPhotos[0]);
     if (photos.length > 1) {
       thumbsEl.innerHTML = photos.map(function(p, i) {
         return '<img class="modal-thumb' + (i === 0 ? ' active' : '') + '"' +
-          ' src="' + p + '" alt="" data-src="' + p + '"' +
+          ' src="' + p + '" alt="" data-src="' + fullPhotos[i] + '"' +
           ' onerror="this.style.display=\'none\'">';
       }).join('');
       thumbsEl.style.display = '';

@@ -3,10 +3,16 @@
 // Wix CDN photos: full URLs (work anywhere)
 // Local photos: filename only — prefix with PHOTOS_BASE when hosted on a CDN
 
-const PHOTOS_BASE = ""; // set to Cloudinary/CDN base URL, e.g. "https://res.cloudinary.com/YOURCLOUD/image/upload/terrain/"
+const PHOTOS_BASE = "";
+const CLOUDINARY_CLOUD = "dcnk0cahf";
+const CL_THUMB = `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/fetch/f_auto,q_auto,w_700,h_480,c_fill,g_auto/`;
+const CL_FULL  = `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/fetch/f_auto,q_auto,w_1400,c_limit/`;
 
-function photoUrl(p) {
-  if (p.startsWith("https://")) return p; // already a full URL (Wix CDN)
+function photoUrl(p, size) {
+  if (p.startsWith("https://")) {
+    const base = size === "full" ? CL_FULL : CL_THUMB;
+    return base + encodeURIComponent(p);
+  }
   return PHOTOS_BASE ? PHOTOS_BASE + p : null; // local — need CDN
 }
 
