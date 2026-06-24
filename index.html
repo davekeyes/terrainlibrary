@@ -656,12 +656,44 @@ updateCount(CATALOGUE.length);
 var activeFilter = 'all';
 var searchQuery = '';
 
+var SYNONYMS = {
+  // Nature / terrain
+  'woods': 'forest', 'woodland': 'forest', 'jungle': 'forest', 'trees': 'forest',
+  'wood': 'forest',
+  'bog': 'marsh', 'swamp': 'marsh', 'wetland': 'marsh',
+  'cave': 'cavern', 'grotto': 'cavern', 'caves': 'cavern',
+  'hill': 'hills', 'mound': 'hills',
+  'cliff': 'rocky', 'bluff': 'rocky',
+  'sea': 'ocean', 'bay': 'harbour', 'dock': 'harbour', 'pier': 'harbour', 'wharf': 'harbour',
+  'boat': 'ship', 'vessel': 'ship',
+  // Buildings
+  'pub': 'tavern', 'bar': 'tavern', 'alehouse': 'tavern', 'inn': 'tavern',
+  'fortress': 'castle', 'stronghold': 'castle', 'keep': 'castle',
+  'chapel': 'church', 'shrine': 'church', 'cathedral': 'church',
+  'shop': 'market', 'store': 'market',
+  'jail': 'dungeon', 'prison': 'dungeon', 'gaol': 'dungeon',
+  'tower': 'watchtower',
+  // Characters
+  'wizard': 'mage', 'sorcerer': 'mage', 'witch': 'mage',
+  'thief': 'rogue', 'burglar': 'rogue',
+  'soldier': 'guard', 'troops': 'guard', 'soldiers': 'guard',
+  'monster': 'beast', 'creature': 'beast',
+  'undead': 'skeleton', 'zombie': 'undead',
+  'goblin': 'goblin',
+  // Other
+  'big': 'large', 'huge': 'large', 'giant': 'large',
+  'small': 'mini', 'tiny': 'mini',
+  'videos': 'video',
+};
+
 function matches(item) {
   if (activeFilter !== 'all' && item.cat !== activeFilter) return false;
   if (searchQuery) {
     var q = searchQuery.toLowerCase();
     var hay = (item.name + ' ' + item.tags + ' ' + item.desc + ' ' + item.sub + ' ' + item.id).toLowerCase();
-    if (hay.indexOf(q) === -1) return false;
+    var terms = [q];
+    if (SYNONYMS[q]) terms.push(SYNONYMS[q]);
+    if (!terms.some(function(t) { return hay.indexOf(t) !== -1; })) return false;
   }
   return true;
 }
