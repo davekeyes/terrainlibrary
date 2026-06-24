@@ -145,8 +145,22 @@
       font-size: 20px;
       min-width: 0;
       outline: none;
+      text-align: center;
     }
     #search::placeholder { color: rgba(240,238,233,0.6); }
+    #search::-webkit-search-cancel-button { -webkit-appearance: none; }
+
+    .search-clear {
+      background: none;
+      border: none;
+      color: var(--text);
+      cursor: pointer;
+      flex-shrink: 0;
+      height: 16px;
+      padding: 0;
+      width: 16px;
+    }
+    .search-clear svg { display: block; height: 16px; width: 16px; }
 
     .filter-strip { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; padding: 8px; }
 
@@ -455,6 +469,11 @@
         <path d="m10.5 10.5 4 4" stroke-linecap="round"/>
       </svg>
       <input type="search" id="search" placeholder="Search for ...cavern, woods, bridge, traps..." autocomplete="off" spellcheck="false">
+      <button class="search-clear" id="search-clear" aria-label="Clear search" hidden>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+          <path d="M4 4l8 8M12 4l-8 8"/>
+        </svg>
+      </button>
     </div>
     <div class="filter-strip">
       <button class="filter-btn active" data-cat="all">All</button>
@@ -604,8 +623,20 @@ document.querySelectorAll('.filter-btn').forEach(function(btn) {
   });
 });
 
-document.getElementById('search').addEventListener('input', function(e) {
+var searchInput = document.getElementById('search');
+var searchClear = document.getElementById('search-clear');
+
+searchInput.addEventListener('input', function(e) {
   searchQuery = e.target.value.trim();
+  searchClear.hidden = !e.target.value;
+  applyFilters();
+});
+
+searchClear.addEventListener('click', function() {
+  searchInput.value = '';
+  searchQuery = '';
+  searchClear.hidden = true;
+  searchInput.focus();
   applyFilters();
 });
 
