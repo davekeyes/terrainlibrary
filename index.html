@@ -461,6 +461,8 @@
 
     .modal-name { color: var(--text); font-family: 'Feijoa', serif; font-size: 40px; font-weight: 500; letter-spacing: -.3px; line-height: 48px; }
 
+    .modal-header-actions { align-items: flex-start; display: flex; flex-shrink: 0; gap: 8px; }
+
     .modal-close {
       background: rgba(240,238,233,0.08);
       border: none;
@@ -779,7 +781,6 @@
       <button class="filter-btn" data-cat="Books">Books</button>
       <button class="filter-btn" data-cat="Misc">Misc</button>
     </div>
-    <span class="header-count" id="header-count"></span>
   </div>
 </section>
 
@@ -803,11 +804,13 @@
           <div class="modal-meta" id="modal-meta"></div>
           <div class="modal-name" id="modal-name-el"></div>
         </div>
-        <button class="modal-borrow" id="modal-borrow" aria-label="Add to borrow list">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-          <span class="modal-borrow-label">Borrow</span>
-        </button>
-        <button class="modal-close" id="modal-close" aria-label="Close">×</button>
+        <div class="modal-header-actions">
+          <button class="modal-borrow" id="modal-borrow" aria-label="Add to borrow list">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            <span class="modal-borrow-label">Borrow</span>
+          </button>
+          <button class="modal-close" id="modal-close" aria-label="Close">×</button>
+        </div>
       </div>
       <div class="modal-details" id="modal-details"></div>
     </div>
@@ -1007,11 +1010,7 @@ function applyFilters() {
   emptyEl.classList.toggle('visible', visible === 0);
 }
 
-function updateCount(n) {
-  var total = CATALOGUE.length;
-  document.getElementById('header-count').textContent =
-    n === total ? total + ' items' : n + ' of ' + total + ' items';
-}
+function updateCount(n) {}
 
 document.querySelectorAll('.filter-btn').forEach(function(btn) {
   btn.addEventListener('click', function() {
