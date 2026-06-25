@@ -1056,7 +1056,7 @@ function setMainPhoto(src) {
 function openModal(id) {
   var item = CATALOGUE.find(function(i) { return i.id === id; });
   if (!item) return;
-  track('item', id);
+  track('item', id, item.name);
 
   var photos = getPhotos(item);
   var fullPhotos = getFullPhotos(item);
@@ -1156,12 +1156,13 @@ document.addEventListener('keydown', function(e) {
 
 // ── Analytics ─────────────────────────────────
 var TRACK_URL = 'https://script.google.com/macros/s/AKfycbwTVggslsV4UohlrCmyCjtjmG4NxlXFKMYBmFihFuL57u7qYNUsdfIRAMSqpTSZNWZLCg/exec';
-function track(event, value) {
+function track(event, value, name) {
   var url = TRACK_URL +
     '?event=' + encodeURIComponent(event) +
     '&value=' + encodeURIComponent(value || '') +
-    '&ua=' + encodeURIComponent(navigator.userAgent) +
-    '&ref=' + encodeURIComponent(document.referrer);
+    '&name='  + encodeURIComponent(name  || '') +
+    '&ua='    + encodeURIComponent(navigator.userAgent) +
+    '&ref='   + encodeURIComponent(document.referrer);
   new Image().src = url;
 }
 
@@ -1372,6 +1373,13 @@ document.getElementById('borrow-submit').addEventListener('click', function() {
 // Initialise collection state on load
 updateListFab();
 updateCardAddButtons();
+
+// Deep-link: ?item=TL-XXX opens that modal on load
+(function() {
+  var params = new URLSearchParams(location.search);
+  var itemId = params.get('item');
+  if (itemId) openModal(itemId);
+})();
 </script>
 </body>
 </html>
