@@ -19,8 +19,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap" rel="stylesheet">
-  <!-- Analytics: replace YOURSITE with your GoatCounter site code once you've signed up at goatcounter.com -->
-  <script data-goatcounter="https://YOURSITE.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <style>
     @font-face {
       font-family: 'Feijoa';
@@ -1157,10 +1155,14 @@ document.addEventListener('keydown', function(e) {
 });
 
 // ── Analytics ─────────────────────────────────
-function track(event, props) {
-  if (window.goatcounter && window.goatcounter.count) {
-    window.goatcounter.count({ path: props ? event + '/' + props : event, event: true });
-  }
+var TRACK_URL = 'https://script.google.com/macros/s/AKfycbwTVggslsV4UohlrCmyCjtjmG4NxlXFKMYBmFihFuL57u7qYNUsdfIRAMSqpTSZNWZLCg/exec';
+function track(event, value) {
+  var url = TRACK_URL +
+    '?event=' + encodeURIComponent(event) +
+    '&value=' + encodeURIComponent(value || '') +
+    '&ua=' + encodeURIComponent(navigator.userAgent) +
+    '&ref=' + encodeURIComponent(document.referrer);
+  new Image().src = url;
 }
 
 // ── Collection ────────────────────────────────
