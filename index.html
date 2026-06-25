@@ -705,6 +705,44 @@
     .borrow-back { background: none; border: none; color: var(--text-muted); cursor: pointer; font-family: 'Open Sans', system-ui, sans-serif; font-size: 13px; padding: 0; text-align: center; text-decoration: underline; }
     .borrow-back:hover { color: var(--text); }
 
+    /* ── Modal Borrow button ─────────────────────── */
+    .modal-borrow {
+      align-items: center;
+      background: #4e6628;
+      border: 1px solid rgba(240,238,233,.25);
+      border-radius: 12px;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      flex-shrink: 0;
+      font-family: 'Open Sans', system-ui, sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      gap: 8px;
+      padding: 10px 18px 10px 14px;
+      transition: opacity .15s;
+    }
+    .modal-borrow:hover { opacity: .85; }
+    .modal-borrow.in-list { background: var(--accent); border-color: var(--accent); color: #1b1d06; }
+    .modal-borrow-label { line-height: 1; }
+
+    /* Also shown links */
+    .also-shown { display: flex; flex-wrap: wrap; gap: 6px; }
+    .also-link {
+      color: var(--text);
+      cursor: pointer;
+      font-size: 15px;
+      text-decoration: underline;
+      text-decoration-color: var(--border-mid);
+      text-underline-offset: 3px;
+      background: none;
+      border: none;
+      padding: 0;
+      font-family: 'Open Sans', system-ui, sans-serif;
+    }
+    .also-link:hover { text-decoration-color: var(--cream-40); }
+    .also-link + .also-link::before { content: "·"; color: var(--text-muted); margin-right: 6px; }
+
     /* date input colour fix for dark bg */
     input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(.6); cursor: pointer; }
 
@@ -765,6 +803,10 @@
           <div class="modal-meta" id="modal-meta"></div>
           <div class="modal-name" id="modal-name-el"></div>
         </div>
+        <button class="modal-borrow" id="modal-borrow" aria-label="Add to borrow list">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          <span class="modal-borrow-label">Borrow</span>
+        </button>
         <button class="modal-close" id="modal-close" aria-label="Close">×</button>
       </div>
       <div class="modal-details" id="modal-details"></div>
@@ -774,7 +816,7 @@
 
 <button class="list-fab" id="list-fab" aria-label="My list">
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-  My List
+  Borrow list
   <span class="list-fab-count" id="list-fab-count">0</span>
 </button>
 
@@ -782,7 +824,7 @@
 
 <div class="list-panel" id="list-panel" role="dialog" aria-label="My list">
   <div class="list-panel-head">
-    <span class="list-panel-title">My List</span>
+    <span class="list-panel-title">Borrow list</span>
     <button class="list-panel-close" id="list-panel-close" aria-label="Close">×</button>
   </div>
   <div class="list-panel-body" id="list-panel-body">
@@ -856,9 +898,9 @@ function catLabel(cat) {
 function buildCard(item) {
   var photos = getPhotos(item);
   var photoHtml;
-  var addBtn = '<button class="card-add" data-id="' + item.id + '" aria-label="Add to list">' +
+  var addBtn = '<button class="card-add" data-id="' + item.id + '" aria-label="Add to borrow list">' +
     '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>' +
-    '<span class="card-add-label">Add</span></button>';
+    '<span class="card-add-label">Borrow</span></button>';
 
   if (photos.length > 0) {
     var countBadge = photos.length > 1
@@ -1132,7 +1174,28 @@ function openModal(id) {
       '</div></div>';
   }
 
+  // Also shown
+  var alsoIds = item.also || [];
+  if (alsoIds.length) {
+    d += '<div class="detail-row"><div class="detail-label">Also shown</div>' +
+      '<div class="also-shown">' +
+      alsoIds.map(function(aid) {
+        var a = CATALOGUE.find(function(i) { return i.id === aid; });
+        return a ? '<button class="also-link" data-id="' + aid + '">' + a.name + '</button>' : '';
+      }).join('') +
+      '</div></div>';
+  }
+
   modalDetails.innerHTML = d;
+
+  modalDetails.querySelectorAll('.also-link').forEach(function(btn) {
+    btn.addEventListener('click', function() { openModal(btn.dataset.id); });
+  });
+
+  // Borrow button state
+  var modalBorrow = document.getElementById('modal-borrow');
+  modalBorrow.dataset.id = id;
+  modalBorrow.classList.toggle('in-list', isInList(id));
 
   backdrop.classList.add('open');
   backdrop.scrollTop = 0;
@@ -1146,6 +1209,12 @@ function closeModal() {
 }
 
 document.getElementById('modal-close').addEventListener('click', closeModal);
+
+document.getElementById('modal-borrow').addEventListener('click', function() {
+  var id = this.dataset.id;
+  toggleList(id);
+  this.classList.toggle('in-list', isInList(id));
+});
 backdrop.addEventListener('click', function(e) { if (e.target === backdrop) closeModal(); });
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
@@ -1206,7 +1275,6 @@ function updateCardAddButtons() {
   document.querySelectorAll('.card-add').forEach(function(btn) {
     var inList = isInList(btn.dataset.id);
     btn.classList.toggle('in-list', inList);
-    btn.querySelector('.card-add-label').textContent = inList ? 'Added' : 'Add';
   });
 }
 
