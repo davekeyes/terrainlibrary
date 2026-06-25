@@ -986,10 +986,95 @@ var SYNONYMS = {
   'undead': 'skeleton', 'zombie': 'undead',
   'goblin': 'goblin',
   // Other
-  'big': 'large', 'huge': 'large', 'giant': 'large',
+  'big': 'large', 'huge': 'large',
   'small': 'mini', 'tiny': 'mini',
   'videos': 'video',
 };
+
+// Maps encounter/creature words to terrain terms for multi-word scored search
+var ENCOUNTER_KEYWORDS = {
+  // Creatures
+  'goblin': ['forest', 'cave', 'dungeon', 'camp'],
+  'goblins': ['forest', 'cave', 'dungeon', 'camp'],
+  'orc': ['forest', 'camp', 'dungeon'],
+  'orcs': ['forest', 'camp', 'dungeon'],
+  'ogre': ['cave', 'forest', 'swamp'],
+  'troll': ['cave', 'swamp', 'marsh', 'bridge'],
+  'giant': ['mountain', 'cave', 'forest'],
+  'giants': ['mountain', 'cave', 'forest'],
+  'skeleton': ['dungeon', 'cavern', 'graveyard'],
+  'skeletons': ['dungeon', 'cavern', 'graveyard'],
+  'zombie': ['dungeon', 'cavern', 'graveyard'],
+  'zombies': ['dungeon', 'cavern', 'graveyard'],
+  'undead': ['dungeon', 'cavern', 'graveyard', 'crypt'],
+  'vampire': ['dungeon', 'cavern', 'castle', 'crypt'],
+  'vampires': ['dungeon', 'cavern', 'castle', 'crypt'],
+  'ghost': ['dungeon', 'graveyard', 'ruin', 'castle'],
+  'ghoul': ['dungeon', 'graveyard', 'cavern'],
+  'wraith': ['dungeon', 'graveyard', 'ruin'],
+  'lich': ['dungeon', 'cavern', 'tower'],
+  'dragon': ['cavern', 'mountain', 'ruin', 'lair'],
+  'beholder': ['dungeon', 'cavern'],
+  'mindflayer': ['dungeon', 'cavern'],
+  'cultist': ['dungeon', 'ruin', 'sewer'],
+  'cultists': ['dungeon', 'ruin', 'sewer'],
+  'demon': ['dungeon', 'ruin', 'lava'],
+  'demons': ['dungeon', 'ruin', 'lava'],
+  'devil': ['dungeon', 'ruin', 'lava'],
+  'bandit': ['forest', 'road', 'camp', 'village'],
+  'bandits': ['forest', 'road', 'camp', 'village'],
+  'pirate': ['ship', 'harbour', 'water'],
+  'pirates': ['ship', 'harbour', 'water'],
+  'guard': ['town', 'castle', 'tavern', 'village'],
+  'guards': ['town', 'castle', 'tavern', 'village'],
+  'assassin': ['town', 'dungeon', 'tavern'],
+  'rogue': ['town', 'dungeon', 'sewer', 'tavern'],
+  'mage': ['tower', 'dungeon', 'ruin'],
+  'wizard': ['tower', 'dungeon', 'ruin'],
+  'witch': ['forest', 'swamp', 'ruin'],
+  'werewolf': ['forest', 'village'],
+  'werewolves': ['forest', 'village'],
+  'yuan-ti': ['dungeon', 'jungle', 'ruin'],
+  'kobold': ['cave', 'dungeon', 'mine'],
+  'kobolds': ['cave', 'dungeon', 'mine'],
+  // Scenarios / activities
+  'ritual': ['dungeon', 'ruin', 'church'],
+  'ceremony': ['dungeon', 'ruin', 'church'],
+  'summoning': ['dungeon', 'ruin'],
+  'ambush': ['forest', 'road', 'town'],
+  'heist': ['town', 'dungeon', 'sewer'],
+  'chase': ['town', 'forest', 'sewer'],
+  'siege': ['castle', 'town', 'village'],
+  'shipwreck': ['ship', 'harbour', 'water'],
+  'tavern': ['tavern'],
+  'negotiation': ['tavern', 'town', 'castle'],
+  'parley': ['tavern', 'town', 'castle'],
+  'escape': ['dungeon', 'sewer', 'town'],
+  'market': ['town', 'village', 'market'],
+  'festival': ['town', 'village'],
+  'exploration': ['dungeon', 'cavern', 'forest', 'ruin'],
+  // Environments not already in SYNONYMS
+  'crypt': ['dungeon', 'graveyard', 'cavern'],
+  'sewer': ['sewer', 'dungeon'],
+  'sewers': ['sewer', 'dungeon'],
+  'lair': ['cavern', 'dungeon', 'cave'],
+  'temple': ['dungeon', 'ruin', 'church'],
+  'sanctum': ['dungeon', 'ruin'],
+  'mine': ['dungeon', 'cavern', 'cave'],
+  'mines': ['dungeon', 'cavern', 'cave'],
+  'graveyard': ['graveyard', 'dungeon'],
+  'cemetery': ['graveyard', 'dungeon'],
+  'battlefield': ['ruin', 'camp', 'field'],
+  'camp': ['camp', 'forest'],
+  'road': ['road', 'forest', 'hills'],
+  'bridge': ['bridge', 'road', 'river'],
+  'lava': ['lava', 'cave'],
+};
+
+var STOP_WORDS = ['a','an','the','in','on','at','of','and','or','for','with','by',
+  'to','is','are','was','were','be','been','into','up','down','out',
+  'some','dark','light','old','new','vs','versus','against',
+  'battle','fight','fighting','encounter','raid','attack'];
 
 function matches(item) {
   if (activeFilter !== 'all' && item.cat !== activeFilter) return false;
@@ -1006,13 +1091,56 @@ function matches(item) {
 function applyFilters() {
   var visible = 0;
   var cards = grid.querySelectorAll('.card');
-  cards.forEach(function(card) {
-    var item = CATALOGUE.find(function(i) { return i.id === card.dataset.id; });
-    if (!item) return;
-    var show = matches(item);
-    card.classList.toggle('hidden', !show);
-    if (show) visible++;
-  });
+  var q = searchQuery.toLowerCase();
+  var isMultiWord = q.indexOf(' ') !== -1;
+
+  if (isMultiWord) {
+    var tokens = q.split(/\s+/).filter(function(t) {
+      return t.length > 1 && STOP_WORDS.indexOf(t) === -1;
+    });
+
+    cards.forEach(function(card) {
+      var item = CATALOGUE.find(function(i) { return i.id === card.dataset.id; });
+      if (!item) { card.style.order = ''; return; }
+
+      if (activeFilter !== 'all' && item.cat !== activeFilter) {
+        card.classList.add('hidden');
+        card.style.order = '';
+        return;
+      }
+
+      if (tokens.length === 0) {
+        card.classList.remove('hidden');
+        card.style.order = '';
+        visible++;
+        return;
+      }
+
+      var hay = (item.name + ' ' + item.tags + ' ' + item.desc + ' ' + item.sub + ' ' + item.id).toLowerCase();
+      var score = 0;
+      tokens.forEach(function(token) {
+        var terms = ENCOUNTER_KEYWORDS[token]
+          ? ENCOUNTER_KEYWORDS[token]
+          : (SYNONYMS[token] ? [token, SYNONYMS[token]] : [token]);
+        if (terms.some(function(t) { return hay.indexOf(t) !== -1; })) score++;
+      });
+
+      var show = score > 0;
+      card.classList.toggle('hidden', !show);
+      card.style.order = show ? String(-score) : '';
+      if (show) visible++;
+    });
+  } else {
+    cards.forEach(function(card) {
+      var item = CATALOGUE.find(function(i) { return i.id === card.dataset.id; });
+      if (!item) return;
+      card.style.order = '';
+      var show = matches(item);
+      card.classList.toggle('hidden', !show);
+      if (show) visible++;
+    });
+  }
+
   updateCount(visible);
   emptyEl.classList.toggle('visible', visible === 0);
 }
