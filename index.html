@@ -1222,8 +1222,13 @@ function matches(item) {
   if (searchQuery) {
     var q = searchQuery.toLowerCase();
     var hay = (item.name + ' ' + item.tags + ' ' + item.desc + ' ' + item.sub + ' ' + item.id).toLowerCase();
+    var sg = null;
+    if (q.slice(-3) === 'ies' && q.length > 5) sg = q.slice(0,-3) + 'y';
+    else if (q.slice(-3) === 'ves' && q.length > 4) sg = q.slice(0,-3) + 'f';
+    else if (q.slice(-1) === 's' && q.length > 4) sg = q.slice(0,-1);
     var terms = [q];
     if (SYNONYMS[q]) terms.push(SYNONYMS[q]);
+    if (sg) { terms.push(sg); if (SYNONYMS[sg]) terms.push(SYNONYMS[sg]); }
     if (!terms.some(function(t) { return hay.indexOf(t) !== -1; })) return false;
   }
   return true;
