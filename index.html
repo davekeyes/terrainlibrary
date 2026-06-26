@@ -1119,10 +1119,15 @@ function applyFilters() {
       var hay = (item.name + ' ' + item.tags + ' ' + item.desc + ' ' + item.sub + ' ' + item.id).toLowerCase();
       var score = 0;
       tokens.forEach(function(token) {
-        var terms = ENCOUNTER_KEYWORDS[token]
-          ? ENCOUNTER_KEYWORDS[token]
-          : (SYNONYMS[token] ? [token, SYNONYMS[token]] : [token]);
-        if (terms.some(function(t) { return hay.indexOf(t) !== -1; })) score++;
+        var singular = (token.slice(-1) === 's' && token.length > 4) ? token.slice(0, -1) : null;
+        if (hay.indexOf(token) !== -1 || (singular && hay.indexOf(singular) !== -1)) {
+          score += 2; // literal name/tag match
+        } else if (ENCOUNTER_KEYWORDS[token]) {
+          if (ENCOUNTER_KEYWORDS[token].some(function(t) { return hay.indexOf(t) !== -1; })) score += 1;
+        } else {
+          var syn = SYNONYMS[token];
+          if (syn && hay.indexOf(syn) !== -1) score += 1;
+        }
       });
 
       var show = score > 0;
